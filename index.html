@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+  <textarea name="textarea" id="textarea" cols="100" rows="10">测试～～～</textarea>
+  <script>
+    var dd = document.getElementById('textarea')
+    dd.addEventListener('keydown', function (e) {
+      if (e.shiftKey && e.keyCode === 9) {
+        e.preventDefault()
+        const { target } = e
+        const start = target.selectionStart
+        const end = target.selectionEnd
+        const selectVal = target.value.slice(start, end)
+        const arr = target.value.split(/\n/)
+        let preArr = []
+        let hitArr = []
+        let aftArr = []
+        let sum = 0
+        for (var i in arr) {
+          if (i !== arr.length-1) {
+            arr[i] += '\n'
+          }
+          let newSum = sum + arr[i].length
+          if ((sum <= start && start < newSum) || (sum <= end && end < newSum) || (sum > start && newSum <= end)) {
+            hitArr.push(arr[i])
+          } else if (start >= newSum) {
+            preArr.push(arr[i])
+          } else if (end < newSum){
+            aftArr.push(arr[i])
+          } else {
+            console.log('not nit~~~~')
+          }
+          sum = newSum          
+        }
+        const tabVal = "  "
+        const reg = new RegExp(`^${tabVal}`)
+        hitArr = hitArr.map(c => c.replace(reg, ''))
+        target.value = preArr.join("")+hitArr.join('')+aftArr.join('')
+        target.selectionStart = start - 2
+        target.selectionEnd = end - 2*hitArr.length
+        console.log('len', target.value.length)
+      } else if (e.keyCode === 9) {
+        e.preventDefault()
+        const tabVal = "  "
+        const { target } = e
+        const start = target.selectionStart
+        const end = target.selectionEnd
+        const selectVal = target.value.slice(start, end)
+        const reg = /\n/
+        if (!reg.test(selectVal)) {
+          const newVal = target.value.slice(0, start) + tabVal + target.value.slice(end)
+          target.value = newVal
+          target.selectionStart = start + tabVal.length
+          target.selectionEnd = end + tabVal.length
+        } else { // 多行
+          // 前面的
+          const prec = target.value.slice(0, start)
+          // 选中的
+          const arr = target.value.slice(start, end).split(reg)
+          const selc = arr.map((c, i) => {
+            return tabVal + c + (i !== arr.length -1 ? '\n' : '')
+          }).join("")
+          // 后面的
+          const next = target.value.slice(end)
+          const newVal = prec + selc + next
+          target.value = newVal
+          target.selectionStart = start
+          target.selectionEnd = start + selc.length
+        }
+      }
+    })
+  </script>
+</body>
+</html>
