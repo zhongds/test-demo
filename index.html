@@ -9,42 +9,63 @@
 <body>
   <textarea name="textarea" id="textarea" cols="100" rows="10">测试～～～</textarea>
   <script>
+    function parseArr(arr, start, end) {
+      let preArr = []
+      let hitArr = []
+      let aftArr = []      
+      let sum = 0
+      for (var i in arr) {
+        if (+i !== arr.length-1) {
+          arr[i] += '\n'
+        }
+        let newSum = sum + arr[i].length
+        if ((sum <= start && start < newSum) || (sum <= end && end < newSum) || (sum > start && newSum <= end)) {
+          hitArr.push(arr[i])
+        } else if (start >= newSum) {
+          preArr.push(arr[i])
+        } else if (end < newSum){
+          aftArr.push(arr[i])
+        } else {
+          console.log('not nit~~~~')
+        }
+        sum = newSum          
+      }
+      return [preArr, hitArr, aftArr]
+    }
+
     var dd = document.getElementById('textarea')
     dd.addEventListener('keydown', function (e) {
       if (e.shiftKey && e.keyCode === 9) {
         e.preventDefault()
         const { target } = e
-        const start = target.selectionStart
-        const end = target.selectionEnd
+        let start = target.selectionStart
+        let end = target.selectionEnd
         const selectVal = target.value.slice(start, end)
         const arr = target.value.split(/\n/)
-        let preArr = []
-        let hitArr = []
-        let aftArr = []
-        let sum = 0
-        for (var i in arr) {
-          if (i !== arr.length-1) {
-            arr[i] += '\n'
-          }
-          let newSum = sum + arr[i].length
-          if ((sum <= start && start < newSum) || (sum <= end && end < newSum) || (sum > start && newSum <= end)) {
-            hitArr.push(arr[i])
-          } else if (start >= newSum) {
-            preArr.push(arr[i])
-          } else if (end < newSum){
-            aftArr.push(arr[i])
-          } else {
-            console.log('not nit~~~~')
-          }
-          sum = newSum          
-        }
+        let [preArr, hitArr, aftArr] = parseArr(arr, start, end)
+        let presum = preArr.reduce((res, c) => res += c.length, 0)
         const tabVal = "  "
-        const reg = new RegExp(`^${tabVal}`)
-        hitArr = hitArr.map(c => c.replace(reg, ''))
+        hitArr = hitArr.map((c ,i) => {
+          if (!/^ /.test(c)) {
+            return c
+          }
+          let res = c
+          let indent = tabVal
+          let reg = new RegExp(`^${tabVal}`)
+          if (!reg.test(c)) {
+            index = " "
+            reg = new RegExp(`^${indent}`)
+          }
+          res = c.replace(reg, '')
+          if (i === 0 && presum !== start) {
+            start -= indent.length
+          }
+          end -= indent.length
+          return res
+        })
         target.value = preArr.join("")+hitArr.join('')+aftArr.join('')
-        target.selectionStart = start - 2
-        target.selectionEnd = end - 2*hitArr.length
-        console.log('len', target.value.length)
+        target.selectionStart = start
+        target.selectionEnd = end
       } else if (e.keyCode === 9) {
         e.preventDefault()
         const tabVal = "  "
@@ -59,19 +80,18 @@
           target.selectionStart = start + tabVal.length
           target.selectionEnd = end + tabVal.length
         } else { // 多行
-          // 前面的
-          const prec = target.value.slice(0, start)
-          // 选中的
-          const arr = target.value.slice(start, end).split(reg)
-          const selc = arr.map((c, i) => {
-            return tabVal + c + (i !== arr.length -1 ? '\n' : '')
-          }).join("")
-          // 后面的
-          const next = target.value.slice(end)
-          const newVal = prec + selc + next
-          target.value = newVal
-          target.selectionStart = start
-          target.selectionEnd = start + selc.length
+          const { target } = e
+          let start = target.selectionStart
+          let end = target.selectionEnd
+          const selectVal = target.value.slice(start, end)
+          const arr = target.value.split(/\n/)
+          let [preArr, hitArr, aftArr] = parseArr(arr, start, end)
+          let presum = preArr.reduce((res, c) => res += c.length, 0)
+          hitArr = hitArr.map((c ,i) => tabVal + c)
+
+          target.value = preArr.join("")+hitArr.join('')+aftArr.join('')
+          target.selectionStart = start+2
+          target.selectionEnd = end + hitArr.length * 2
         }
       }
     })
